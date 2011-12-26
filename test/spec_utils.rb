@@ -184,6 +184,62 @@ describe Rack::Utils do
     lambda { Rack::Utils.parse_nested_query("x[y]=1&x[y][][w]=2") }.
       should.raise(TypeError).
       message.should.equal "expected Array (got String) for param `y'"
+
+
+    Rack::Utils.parse_nested_query("foo.").
+      should.equal "foo" => [nil]
+    Rack::Utils.parse_nested_query("foo.=").
+      should.equal "foo" => [""]
+    Rack::Utils.parse_nested_query("foo.=bar").
+      should.equal "foo" => ["bar"]
+
+    Rack::Utils.parse_nested_query("foo.=1&foo.=2").
+      should.equal "foo" => ["1", "2"]
+    Rack::Utils.parse_nested_query("foo=bar&baz.=1&baz.=2&baz.=3").
+      should.equal "foo" => "bar", "baz" => ["1", "2", "3"]
+    Rack::Utils.parse_nested_query("foo.=bar&baz.=1&baz.=2&baz.=3").
+      should.equal "foo" => ["bar"], "baz" => ["1", "2", "3"]
+
+    Rack::Utils.parse_nested_query("x.y.z=1").
+      should.equal "x" => {"y" => {"z" => "1"}}
+    Rack::Utils.parse_nested_query("x.y.z.=1").
+      should.equal "x" => {"y" => {"z" => ["1"]}}
+    Rack::Utils.parse_nested_query("x.y.z=1&x.y.z=2").
+      should.equal "x" => {"y" => {"z" => "2"}}
+    Rack::Utils.parse_nested_query("x.y.z.=1&x.y.z.=2").
+      should.equal "x" => {"y" => {"z" => ["1", "2"]}}
+
+    Rack::Utils.parse_nested_query("x.y..z=1").
+      should.equal "x" => {"y" => [{"z" => "1"}]}
+    Rack::Utils.parse_nested_query("x.y..z.=1").
+      should.equal "x" => {"y" => [{"z" => ["1"]}]}
+    Rack::Utils.parse_nested_query("x.y..z=1&x.y..w=2").
+      should.equal "x" => {"y" => [{"z" => "1", "w" => "2"}]}
+
+    Rack::Utils.parse_nested_query("x.y..v.w=1").
+      should.equal "x" => {"y" => [{"v" => {"w" => "1"}}]}
+    Rack::Utils.parse_nested_query("x.y..z=1&x.y..v.w=2").
+      should.equal "x" => {"y" => [{"z" => "1", "v" => {"w" => "2"}}]}
+
+    Rack::Utils.parse_nested_query("x.y..z=1&x.y..z=2").
+      should.equal "x" => {"y" => [{"z" => "1"}, {"z" => "2"}]}
+    Rack::Utils.parse_nested_query("x.y..z=1&x.y..w=a&x.y..z=2&x.y..w=3").
+      should.equal "x" => {"y" => [{"z" => "1", "w" => "a"}, {"z" => "2", "w" => "3"}]}
+
+    lambda { Rack::Utils.parse_nested_query("x.y=1&x.y.z=2") }.
+      should.raise(TypeError).
+      message.should.equal "expected Hash (got String) for param `y'"
+
+    lambda { Rack::Utils.parse_nested_query("x.y=1&x.=1") }.
+      should.raise(TypeError).
+      message.should.equal "expected Array (got Hash) for param `x'"
+
+    lambda { Rack::Utils.parse_nested_query("x.y=1&x.y..w=2") }.
+      should.raise(TypeError).
+      message.should.equal "expected Array (got String) for param `y'"
+
+    Rack::Utils.parse_nested_query("x.y[].z=1&x[y][].w=a&x.y..z=2&x.y..[w]=3").
+      should.equal "x" => {"y" => [{"z" => "1", "w" => "a"}, {"z" => "2", "w" => "3"}]}
   end
 
   should "build query strings correctly" do

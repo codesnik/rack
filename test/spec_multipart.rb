@@ -250,7 +250,7 @@ describe Rack::Multipart do
                       "CONTENT_LENGTH" => input.size,
                       :input => input)
 
-    req.POST['file.path'].should.equal "/var/tmp/uploads/4/0001728414"
+    req.POST['file']['path'].should.equal "/var/tmp/uploads/4/0001728414"
     req.POST['addresses'].should.not.equal nil
   end
 
